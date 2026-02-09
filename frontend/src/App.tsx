@@ -11,6 +11,7 @@ import { InputPanel } from './components/InputPanel';
 import { DebugPanel } from './components/DebugPanel';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
+import { AuthProvider } from './contexts/AuthContext';
 import { useAppStore } from './store/useAppStore';
 import { aiService } from './services/AIService';
 import { motionManager } from './services/MotionManager';
@@ -19,7 +20,7 @@ import './App.css';
 
 const MODEL_PATH = '/haru_greeter_pro_jp/runtime/haru_greeter_t05.model3.json';
 
-function App() {
+function AppContent() {
   const { setLeftPanelContent, setTeachingSegments } = useAppStore();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -61,7 +62,7 @@ function App() {
 
   return (
     <div className="app">
-      <Navbar onMenuClick={() => setSidebarOpen(true)} />
+      <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       <main className="app-main">
@@ -83,6 +84,14 @@ function App() {
       <InputPanel />
       <DebugPanel />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

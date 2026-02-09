@@ -1,17 +1,17 @@
 /**
- * Input Panel Component
+ * Input Panel Component - WITH REAL-TIME VOICE
  * Text input and microphone button at bottom center
- * Implements proper voice state machine: IDLE → LISTENING → SPEAKING
+ * Implements real-time speech recognition with auto-pause detection
  */
 
 import React, { useState, useRef, useEffect } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import { speechController } from '../services/SpeechController';
 import { aiService } from '../services/AIService';
 import { motionManager } from '../services/MotionManager';
 import { synchronizationCoordinator } from '../services/SynchronizationCoordinator';
 import { eyeController } from '../services/EyeController';
 import { lipSyncService } from '../services/LipSyncService';
+import { realtimeSpeechService, RealtimeSpeechService } from '../services/RealtimeSpeechService';
 import { VoiceState } from '../types';
 import { shouldWave } from '../utils/greetingDetector';
 import { getRandomGreeting } from '../config/systemPrompt';
@@ -19,6 +19,7 @@ import './InputPanel.css';
 
 export const InputPanel: React.FC = () => {
   const [inputText, setInputText] = useState('');
+  const [liveTranscript, setLiveTranscript] = useState(''); // Real-time transcription
   const [isProcessing, setIsProcessing] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceState>(VoiceState.IDLE);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +32,48 @@ export const InputPanel: React.FC = () => {
     addChatMessage,
     setSpeaking,
   } = useAppStore();
+
+  // Setup real-time speech recognition callbacks
+  useEffect(() => {
+    // Check browser support
+    if (!RealtimeSpeechService.isSupported()) {
+      console.warn('Speech Recognition not supported in this browser');
+      return;
+    }
+
+    // Real-time transcript updates
+    realtimeSpeechService.onTranscript((text, isFinal) => {
+      setLiveTranscript(text);
+      
+      if (isFinal) {
+        console.log('📝 Final transcript:', text);
+      }
+    });
+
+    // Speech complete (after 1s pause)
+    realtimeSpeechService.onComplete((finalText) => {
+      console.log('✅ Speech complete:', finalText);
+      setLiveTranscript('');
+      
+      // Process the speech
+      if (finalText.trim()) {
+        handleSubmit(finalText);
+      }
+      
+      // Continue listening (continuous mode)
+      // The service will auto-restart
+    });
+
+    // Handle errors
+    realtimeSpeechService.onError((error) => {
+      console.error('Speech recognition error:', error);
+      
+      if (error === 'not-allowed') {
+        alert('Microphone access denied. Please allow microphone access to use voice input.');
+        setVoiceState(VoiceState.IDLE);
+      }
+    });
+  }, []);
 
   // Update voice state when AI starts/stops speaking
   useEffect(() => {
@@ -56,45 +99,34 @@ export const InputPanel: React.FC = () => {
     addChatMessage('user', text);
 
     // Check if greeting - handle locally WITHOUT calling AI backend
-    // ATOMIC ACTION: Wave + Speech + Lip-sync synchronized
     if (shouldWave(text)) {
       console.log('👋 Greeting detected - atomic local handling (no AI call)');
       
       try {
-        // Get random greeting response
         const greetingResponse = getRandomGreeting();
-        
-        // Add greeting to chat
         addChatMessage('assistant', greetingResponse);
         
-        // ATOMIC GREETING ACTION: Start all simultaneously
         const greetingPromise = motionManager.requestGesture('greeting');
-        
-        // Start speaking
         setSpeaking(true);
         eyeController.lookRight(3000);
         
-        // Use browser speech synthesis
         const utterance = new SpeechSynthesisUtterance(greetingResponse);
         utterance.rate = 0.9;
         utterance.pitch = 1.1;
         
-        // Find female voice
         const voices = window.speechSynthesis.getVoices();
         const femaleVoice = voices.find(v => v.name.includes('Female') || v.name.includes('Samantha') || v.name.includes('Victoria'));
         if (femaleVoice) {
           utterance.voice = femaleVoice;
         }
         
-        // Synchronized start
         utterance.onstart = () => {
           lipSyncService.startSimpleLipSync();
         };
         
-        // Synchronized end - wait for both gesture and speech
         utterance.onend = async () => {
           lipSyncService.stopLipSync();
-          await greetingPromise; // Wait for gesture to complete
+          await greetingPromise;
           setSpeaking(false);
           eyeController.lookCenter();
           motionManager.returnToIdle();
@@ -111,22 +143,16 @@ export const InputPanel: React.FC = () => {
       } finally {
         setIsProcessing(false);
       }
-      return; // EXIT - do not call AI backend
+      return;
     }
 
     // For non-greetings, call AI backend
     try {
-      // Get AI response
       const response = await aiService.query(text);
-
-      // Add assistant message to chat
       addChatMessage('assistant', response.text);
-
-      // Store segments
       setTeachingSegments(response.segments);
       setIsTeaching(true);
 
-      // Execute synchronized teaching sequence
       await synchronizationCoordinator.executeTeachingSequence(
         response.segments,
         response.text,
@@ -135,7 +161,7 @@ export const InputPanel: React.FC = () => {
 
     } catch (error) {
       console.error('Error processing input:', error);
-      const errorMsg = 'Sorry, I encountered an error. Please try again.';
+      const errorMsg = error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.';
       setLeftPanelContent(errorMsg);
       addChatMessage('assistant', errorMsg);
     } finally {
@@ -143,59 +169,36 @@ export const InputPanel: React.FC = () => {
     }
   };
 
-  const startListening = async () => {
-    try {
-      await speechController.startRecording();
-      setVoiceState(VoiceState.LISTENING);
-      console.log('🎤 Started listening');
-    } catch (error) {
-      console.error('Error starting recording:', error);
-      alert('Failed to access microphone. Please check permissions.');
-      setVoiceState(VoiceState.IDLE);
-    }
-  };
-
-  const stopListening = async () => {
-    try {
-      const audioBlob = await speechController.stopRecording();
-      const transcribedText = await speechController.transcribeAudio(audioBlob);
-      
-      setVoiceState(VoiceState.IDLE);
-      console.log('🎤 Stopped listening');
-      
-      if (transcribedText) {
-        await handleSubmit(transcribedText);
-      }
-    } catch (error) {
-      console.error('Error processing voice input:', error);
-      setVoiceState(VoiceState.IDLE);
-    }
-  };
-
-  const stopSpeaking = () => {
-    synchronizationCoordinator.interrupt();
-    setSpeaking(false);
-    setVoiceState(VoiceState.IDLE);
-    console.log('🔇 Stopped speaking');
-  };
-
-  /**
-   * Voice State Machine
-   * IDLE → Click Speak → LISTENING
-   * LISTENING → Click Stop → IDLE
-   * SPEAKING → Click Speak → Stop speaking, start LISTENING
-   */
   const handleMicClick = async () => {
     if (voiceState === VoiceState.IDLE) {
-      // Start listening
-      await startListening();
+      // Start real-time listening
+      try {
+        await realtimeSpeechService.startListening();
+        setVoiceState(VoiceState.LISTENING);
+        console.log('🎤 Started real-time listening');
+      } catch (error) {
+        console.error('Error starting listening:', error);
+        alert('Failed to access microphone. Please check permissions.');
+      }
     } else if (voiceState === VoiceState.LISTENING) {
       // Stop listening
-      await stopListening();
+      realtimeSpeechService.stopListening();
+      setVoiceState(VoiceState.IDLE);
+      setLiveTranscript('');
+      console.log('🛑 Stopped listening');
     } else if (voiceState === VoiceState.SPEAKING) {
-      // Stop speaking and start listening
-      stopSpeaking();
-      await startListening();
+      // Stop AI speaking and start listening
+      synchronizationCoordinator.interrupt();
+      setSpeaking(false);
+      setVoiceState(VoiceState.IDLE);
+      
+      // Start listening
+      try {
+        await realtimeSpeechService.startListening();
+        setVoiceState(VoiceState.LISTENING);
+      } catch (error) {
+        console.error('Error starting listening:', error);
+      }
     }
   };
 
@@ -267,10 +270,18 @@ export const InputPanel: React.FC = () => {
         </button>
       </div>
 
-      {voiceState === VoiceState.LISTENING && (
-        <div className="recording-indicator">
+      {/* Real-time transcription display */}
+      {voiceState === VoiceState.LISTENING && liveTranscript && (
+        <div className="live-transcript">
+          <span className="transcript-label">You're saying:</span>
+          <span className="transcript-text">{liveTranscript}</span>
+        </div>
+      )}
+
+      {voiceState === VoiceState.LISTENING && !liveTranscript && (
+        <div className="listening-indicator">
           <span className="pulse"></span>
-          Listening...
+          Listening... (speak naturally, I'll respond after you pause)
         </div>
       )}
 

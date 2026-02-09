@@ -13,38 +13,35 @@
   padding: 0 20px;
 }
 
-.menu-button {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+.logo-button {
+  width: 52px;
+  height: 52px;
   border: none;
-  background: #ffffff;
-  color: #1f2937;
+  background: white;
   cursor: pointer;
+  padding: 4px; /* Reduced padding for more logo zoom */
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
   pointer-events: auto; /* Button is clickable */
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.menu-button:hover {
-  background: #f9fafb;
+.logo-button:hover {
   transform: scale(1.05);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-.menu-button:active {
-  transform: scale(0.95);
+.logo-button:active {
+  transform: scale(0.98);
 }
 
-.menu-button svg {
-  transition: transform 0.3s ease;
-}
-
-.menu-button:hover svg {
-  transform: rotate(90deg);
+.logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 @media (max-width: 768px) {
@@ -53,8 +50,9 @@
     padding: 0 16px;
   }
 
-  .menu-button {
-    width: 40px;
-    height: 40px;
+  .logo-button {
+    width: 48px;
+    height: 48px;
+    padding: 5px;
   }
 }

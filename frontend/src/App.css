@@ -11,7 +11,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden;
-  background: url('/background-school.jpg') no-repeat center center fixed;
+  background: url('/background-school.png') no-repeat center center fixed;
   background-size: cover;
 }
 
@@ -35,10 +35,11 @@ body {
   overflow: hidden;
   position: relative;
   height: calc(100vh - 120px); /* Account for navbar and input */
-  align-items: center; /* Vertically center panels */
+  align-items: start; /* Align panels to top */
+  padding-top: 100px; /* More space from top */
 }
 
-/* Side panels - SQUARE ratio, vertically centered */
+/* Side panels - SQUARE ratio, positioned higher */
 .left-section,
 .right-section {
   display: flex;
@@ -48,7 +49,7 @@ body {
   width: 100%;
   z-index: 10;
   position: relative;
-  align-self: center; /* Vertically center */
+  align-self: start; /* Align to top */
 }
 
 /* Center section - Haru grows to fill space */

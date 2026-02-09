@@ -83,6 +83,9 @@ export class ProviderRegistry {
    */
   private static async createAIProvider(providerName: string): Promise<AIProvider> {
     switch (providerName) {
+      case 'openai':
+        const { OpenAIAdapter } = await import('./openai/OpenAIAdapter.js');
+        return new OpenAIAdapter();
       case 'gemini':
         const { GeminiAdapter } = await import('./gemini/GeminiAdapter.js');
         return new GeminiAdapter();
@@ -90,9 +93,6 @@ export class ProviderRegistry {
         const { AWSBedrockAdapter } = await import('./aws/AWSBedrockAdapter.js');
         return new AWSBedrockAdapter();
       // Future providers:
-      // case 'openai':
-      //   const { OpenAIAdapter } = await import('./openai/OpenAIAdapter.js');
-      //   return new OpenAIAdapter();
       // case 'local-llama':
       //   const { LocalLlamaAdapter } = await import('./local/LocalLlamaAdapter.js');
       //   return new LocalLlamaAdapter();
