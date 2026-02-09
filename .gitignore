@@ -6,9 +6,9 @@ node_modules/
 # Testing
 /coverage
 
-# Production
-/build
-/dist
+# Production builds
+backend/dist/
+frontend/dist/
 
 # Environment variables
 .env
@@ -16,6 +16,8 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
+backend/.env
+frontend/.env
 
 # Logs
 npm-debug.log*
@@ -51,6 +53,8 @@ Thumbs.db
 # Documentation (except README.md)
 *.md
 !README.md
+!backend/README.md
+!frontend/README.md
 
 # Temporary files
 *.tmp
@@ -60,10 +64,7 @@ Thumbs.db
 # Build artifacts
 *.tsbuildinfo
 
-# Package manager
-package-lock.json
-yarn.lock
-pnpm-lock.yaml
-
-# Optional: Keep package-lock.json if you want consistent installs
-# Comment out the line above if needed
+# Package lock files (optional - uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
