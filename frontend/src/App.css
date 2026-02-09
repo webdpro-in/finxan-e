@@ -1,0 +1,199 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+  background: url('/background-school.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
+.app {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+}
+
+/* LAYER 1: Navbar (fixed top) - handled by Navbar.css */
+
+/* LAYER 2: Main content grid */
+.app-main {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(400px, 500px) 1fr minmax(400px, 500px);
+  gap: 24px;
+  padding: 80px 24px 24px 24px; /* Top padding for navbar */
+  overflow: hidden;
+  position: relative;
+  height: calc(100vh - 120px); /* Account for navbar and input */
+  align-items: center; /* Vertically center panels */
+}
+
+/* Side panels - SQUARE ratio, vertically centered */
+.left-section,
+.right-section {
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 1 / 1; /* SQUARE */
+  max-height: 600px;
+  width: 100%;
+  z-index: 10;
+  position: relative;
+  align-self: center; /* Vertically center */
+}
+
+/* Center section - Haru grows to fill space */
+.center-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  z-index: 5;
+  height: 100%;
+  min-height: 600px;
+}
+
+.character-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* LAYER 3: Input panel (fixed bottom) - handled by InputPanel.css */
+
+/* Responsive Design */
+@media (max-width: 1600px) {
+  .app-main {
+    grid-template-columns: minmax(380px, 450px) 1fr minmax(380px, 450px);
+    gap: 20px;
+  }
+  
+  .left-section,
+  .right-section {
+    max-height: 550px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .app-main {
+    grid-template-columns: minmax(350px, 420px) 1fr minmax(350px, 420px);
+    gap: 16px;
+  }
+  
+  .left-section,
+  .right-section {
+    max-height: 500px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .app-main {
+    grid-template-columns: 350px 1fr 350px;
+    gap: 16px;
+  }
+  
+  .left-section,
+  .right-section {
+    max-height: 450px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-main {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 16px;
+    padding: 80px 16px 140px 16px;
+    align-items: stretch;
+  }
+
+  .left-section,
+  .right-section {
+    aspect-ratio: auto;
+    max-height: 300px;
+    height: 300px;
+  }
+
+  .left-section {
+    order: 1;
+  }
+
+  .center-section {
+    order: 2;
+    min-height: 400px;
+  }
+
+  .right-section {
+    order: 3;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-main {
+    padding: 70px 12px 160px 12px;
+  }
+  
+  .left-section,
+  .right-section {
+    max-height: 250px;
+    height: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-main {
+    padding: 60px 12px 160px 12px;
+  }
+  
+  .left-section,
+  .right-section {
+    max-height: 200px;
+    height: 200px;
+  }
+}
+
+/* Smooth animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.left-section,
+.center-section,
+.right-section {
+  animation: fadeIn 0.6s ease-out;
+}
+
+.left-section {
+  animation-delay: 0.1s;
+}
+
+.center-section {
+  animation-delay: 0.2s;
+}
+
+.right-section {
+  animation-delay: 0.3s;
+}

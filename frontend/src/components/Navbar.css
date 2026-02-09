@@ -1,0 +1,60 @@
+/* LAYER 1: Navbar - Fixed top layer (highest z-index) */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: transparent;
+  z-index: 10000; /* Highest layer - above everything */
+  pointer-events: none; /* Allow clicks through navbar */
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.menu-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: #1f2937;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: auto; /* Button is clickable */
+}
+
+.menu-button:hover {
+  background: #f9fafb;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.menu-button:active {
+  transform: scale(0.95);
+}
+
+.menu-button svg {
+  transition: transform 0.3s ease;
+}
+
+.menu-button:hover svg {
+  transform: rotate(90deg);
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    height: 56px;
+    padding: 0 16px;
+  }
+
+  .menu-button {
+    width: 40px;
+    height: 40px;
+  }
+}
