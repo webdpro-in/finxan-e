@@ -45,56 +45,69 @@ export class SynchronizationCoordinator {
       // 2. Update images if present
       if (images && images.length > 0) {
         store.setRightPanelImages(images);
-        // Look left at images
-        eyeController.lookLeft(4000);
       }
 
-      // 3. Generate TTS audio (CRITICAL - must not fail silently)
-      console.log('[SyncCoordinator] 🔊 Generating TTS audio...');
-      let audioUrl: string;
-      try {
-        audioUrl = await speechController.textToSpeech(fullText);
-        console.log('[SyncCoordinator] ✅ TTS audio generated:', audioUrl);
-      } catch (error) {
-        console.error('[SyncCoordinator] ❌ TTS generation failed:', error);
-        // Retry once
-        console.log('[SyncCoordinator] 🔄 Retrying TTS generation...');
+      // 3. Pre-fetch TTS audio for each segment to ensure perfect synchronization
+      console.log('[SyncCoordinator] 🔊 Generating TTS audio segment by segment...');
+      const segmentAudios: string[] = [];
+      
+      for (const segment of segments) {
         try {
-          audioUrl = await speechController.textToSpeech(fullText);
-          console.log('[SyncCoordinator] ✅ TTS retry successful');
-        } catch (retryError) {
-          console.error('[SyncCoordinator] ❌ TTS retry failed:', retryError);
-          throw new Error('Failed to generate speech after retry');
+          const url = await speechController.textToSpeech(segment.content);
+          segmentAudios.push(url);
+        } catch (error) {
+          console.error('[SyncCoordinator] ❌ TTS generation failed for segment:', segment.content);
+          // Retry once strictly for this segment
+          const retryUrl = await speechController.textToSpeech(segment.content);
+          segmentAudios.push(retryUrl);
         }
       }
 
       const syncEnd = performance.now();
-      console.log(`[SyncCoordinator] ⚡ Synchronization completed in ${syncEnd - syncStart}ms`);
+      console.log(`[SyncCoordinator] ⚡ Audio preparation completed in ${syncEnd - syncStart}ms`);
 
-      // 4. Execute gesture sequence (parallel with speech preparation)
-      const gesturePromise = this.executeGestureSequence(segments);
-
-      // 5. Play speech with lip sync (CRITICAL - this is where voice plays)
-      console.log('[SyncCoordinator] 🎤 Starting speech playback with lip sync');
+      // 4. Play speech and gesture concurrently with strict sentence-by-sentence synchronization (CRITICAL)
+      console.log('[SyncCoordinator] 🎤 Starting synchronized teaching playback');
       store.setSpeaking(true);
       
-      // Look right at chat while speaking
-      eyeController.lookRight(5000);
+      for (let i = 0; i < segments.length; i++) {
+        if (!this.isExecuting) {
+          console.log('[SyncCoordinator] Execution interrupted mid-playback.');
+          break; // Stop going through segments if interrupted
+        }
+        
+        const segment = segments[i];
+        this.currentSegmentIndex = i;
+        
+        // Trigger Gesture & Eye Contact
+        if (segment.gesture) {
+          console.log(`[SyncCoordinator] Playing segment ${i} gesture: ${segment.gesture}`);
+          motionManager.requestGesture(segment.gesture);
+
+          // Direct eyes mapping to UI layout strictly
+          if (segment.gesture === 'pointLeft') {
+            eyeController.lookLeft(4000); // look at assigned right panel (images left logically)
+          } else if (segment.gesture === 'pointRight') {
+            eyeController.lookRight(4000); // look at assigned left panel (text right logically)
+          } else if (segment.gesture === 'idle') {
+            eyeController.lookCenter();
+          }
+        }
+
+        // Wait strictly for the duration of this segment's audio to finish before moving to the next segment
+        // This ensures lip-sync naturally flows identically with the assigned localized gesture loop.
+        await speechController.playAudio(segmentAudios[i]);
+      }
       
-      // Play audio with lip sync
-      await speechController.playAudio(audioUrl);
-      
-      console.log('[SyncCoordinator] ✅ Speech playback completed');
+      console.log('[SyncCoordinator] ✅ Playback loop finished');
       store.setSpeaking(false);
 
-      // Wait for gestures to complete
-      await gesturePromise;
-
-      // 6. Return to idle
-      await motionManager.returnToIdle();
-      eyeController.lookCenter();
-
-      console.log('[SyncCoordinator] 🎉 Teaching sequence completed');
+      // 5. Return to idle
+      if (this.isExecuting) {
+        await motionManager.returnToIdle();
+        eyeController.lookCenter();
+        console.log('[SyncCoordinator] 🎉 Teaching sequence naturally completed');
+      }
 
     } catch (error) {
       console.error('[SyncCoordinator] ❌ Error in teaching sequence:', error);
@@ -103,7 +116,7 @@ export class SynchronizationCoordinator {
       eyeController.lookCenter();
       
       // Show error to user
-      store.setLeftPanelContent('Sorry, I encountered an error with speech generation. Please try again.');
+      store.setLeftPanelContent('Sorry, I encountered an error with speech synchronization. Please try again.');
     } finally {
       this.isExecuting = false;
       store.setIsTeaching(false);
@@ -118,31 +131,6 @@ export class SynchronizationCoordinator {
             nextEvent.images
           );
         }
-      }
-    }
-  }
-
-  /**
-   * Execute gesture sequence for teaching segments
-   */
-  private async executeGestureSequence(segments: TeachingSegment[]): Promise<void> {
-    for (let i = 0; i < segments.length; i++) {
-      const segment = segments[i];
-      this.currentSegmentIndex = i;
-
-      if (segment.gesture) {
-        console.log(`[SyncCoordinator] Segment ${i}: ${segment.gesture}`);
-        
-        // Request gesture
-        await motionManager.requestGesture(segment.gesture);
-
-        // Calculate wait time based on content length
-        const words = segment.content.split(/\s+/).length;
-        const readingTime = (words / 150) * 60 * 1000; // 150 words per minute
-        const waitTime = Math.max(readingTime, 2000); // Minimum 2 seconds
-
-        // Wait for gesture to complete
-        await this.delay(waitTime);
       }
     }
   }
@@ -184,13 +172,6 @@ export class SynchronizationCoordinator {
    */
   public getCurrentSegmentIndex(): number {
     return this.currentSegmentIndex;
-  }
-
-  /**
-   * Utility: delay
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
   }
 }
 

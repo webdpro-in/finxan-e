@@ -26,8 +26,18 @@ synthesizeRouter.post('/', async (req, res) => {
     // Get TTS provider from registry (uses TTSProvider contract interface)
     const ttsProvider = await ProviderRegistry.getTTSProvider();
 
-    // Call provider through contract interface
-    const audioUrl = await ttsProvider.synthesize(text, voiceId, languageCode);
+    let audioUrl: string;
+    // Call provider through contract interface with Fallback logic
+    try {
+      audioUrl = await ttsProvider.synthesize(text, voiceId, languageCode);
+    } catch (primaryError: any) {
+      console.warn(`⚠️ Primary TTS provider failed: ${primaryError.message}. Falling back to Browser TTS.`);
+      
+      // Fallback to Browser Native TTS
+      const { BrowserTTSAdapter } = await import('../providers/browser/BrowserTTSAdapter.js');
+      const fallbackProvider = new BrowserTTSAdapter();
+      audioUrl = await fallbackProvider.synthesize(text, voiceId, languageCode);
+    }
 
     res.json({ audioUrl });
   } catch (error) {

@@ -40,6 +40,17 @@ export class MotionManager {
   }
 
   /**
+   * Helper to map our MotionName enum to the actual index in the model's json.
+   * Based on haru_greeter_t05.model3.json where '' group has motions 0 to 26.
+   */
+  private getMotionIndex(motionName: MotionName): number {
+    if (motionName === 'haru_g_idle') return 0;
+    const match = motionName.match(/m(\d+)/);
+    if (match) return parseInt(match[1], 10);
+    return 0; // Default fallback to idle
+  }
+
+  /**
    * Play a specific motion
    */
   private async playMotion(motionName: MotionName, loop: boolean = false): Promise<void> {
@@ -51,12 +62,14 @@ export class MotionManager {
     try {
       console.log(`🎬 Playing motion: ${motionName} (loop: ${loop})`);
 
-      // Play motion using the motion file name
-      // The library will automatically find the motion by filename
-      await this.model.motion(motionName, undefined, loop ? 3 : 0); // 3 = loop, 0 = no loop
+      // Haru Live2D model motions are grouped under the '' (empty) group name, indexed 0-26
+      const motionIndex = this.getMotionIndex(motionName);
+      
+      // 3 = PriorityLoop, 0 = PriorityNone
+      await this.model.motion('', motionIndex, loop ? 3 : 3); // Provide 3 as default priority
       
       this.currentMotion = motionName;
-      console.log(`✅ Motion ${motionName} started successfully`);
+      console.log(`✅ Motion ${motionName} (index: ${motionIndex}) started successfully`);
 
       // If not looping, schedule return to idle
       if (!loop && motionName !== 'haru_g_idle') {

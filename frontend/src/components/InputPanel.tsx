@@ -169,6 +169,18 @@ export const InputPanel: React.FC = () => {
     }
   };
 
+  const handleStop = () => {
+    synchronizationCoordinator.interrupt();
+    setSpeaking(false);
+    setVoiceState(VoiceState.IDLE);
+    console.log('🛑 Bot stopped');
+
+    // Make sure STT isn't accidentally stuck in Listening state UI
+    if (voiceState === VoiceState.LISTENING) {
+      realtimeSpeechService.stopListening();
+    }
+  };
+
   const handleMicClick = async () => {
     if (voiceState === VoiceState.IDLE) {
       // Start real-time listening
@@ -187,11 +199,8 @@ export const InputPanel: React.FC = () => {
       setLiveTranscript('');
       console.log('🛑 Stopped listening');
     } else if (voiceState === VoiceState.SPEAKING) {
-      // Stop AI speaking and start listening
-      synchronizationCoordinator.interrupt();
-      setSpeaking(false);
-      setVoiceState(VoiceState.IDLE);
-      
+      // Original logic: Stop AI speaking and start listening
+      handleStop();
       // Start listening
       try {
         await realtimeSpeechService.startListening();
@@ -268,6 +277,20 @@ export const InputPanel: React.FC = () => {
             </svg>
           )}
         </button>
+
+        {/* Dedicated Stop Button */}
+        {voiceState === VoiceState.SPEAKING && (
+          <button
+            className="stop-button"
+            onClick={handleStop}
+            title="Stop Haru"
+            aria-label="Stop Haru"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="5" y="5" width="14" height="14" rx="2" fill="currentColor"/>
+            </svg>
+          </button>
+        )}
       </div>
 
       {/* Real-time transcription display */}

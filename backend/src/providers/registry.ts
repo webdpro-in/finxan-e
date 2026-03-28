@@ -83,6 +83,9 @@ export class ProviderRegistry {
    */
   private static async createAIProvider(providerName: string): Promise<AIProvider> {
     switch (providerName) {
+      case 'groq':
+        const { GroqAdapter } = await import('./groq/GroqAdapter.js');
+        return new GroqAdapter();
       case 'openai':
         const { OpenAIAdapter } = await import('./openai/OpenAIAdapter.js');
         return new OpenAIAdapter();
@@ -92,72 +95,59 @@ export class ProviderRegistry {
       case 'aws-bedrock':
         const { AWSBedrockAdapter } = await import('./aws/AWSBedrockAdapter.js');
         return new AWSBedrockAdapter();
-      // Future providers:
-      // case 'local-llama':
-      //   const { LocalLlamaAdapter } = await import('./local/LocalLlamaAdapter.js');
-      //   return new LocalLlamaAdapter();
       default:
-        throw new Error(`Unknown AI provider: ${providerName}`);
+        throw new Error(`Unknown AI provider: ${providerName}. Available: groq, openai, gemini, aws-bedrock`);
     }
   }
 
   /**
    * Factory method for TTS providers
-   * @param providerName - Name of the provider to instantiate
-   * @returns TTSProvider implementation
-   * @throws Error if provider name is unknown
    */
   private static async createTTSProvider(providerName: string): Promise<TTSProvider> {
     switch (providerName) {
+      case 'sarvam':
+        const { SarvamTTSAdapter } = await import('./sarvam/SarvamTTSAdapter.js');
+        return new SarvamTTSAdapter();
+      case 'browser':
+        const { BrowserTTSAdapter } = await import('./browser/BrowserTTSAdapter.js');
+        return new BrowserTTSAdapter();
       case 'aws-polly':
         const { AWSPollyAdapter } = await import('./aws/AWSPollyAdapter.js');
         return new AWSPollyAdapter();
-      // Future providers:
-      // case 'elevenlabs':
-      //   const { ElevenLabsAdapter } = await import('./elevenlabs/ElevenLabsAdapter.js');
-      //   return new ElevenLabsAdapter();
       default:
-        throw new Error(`Unknown TTS provider: ${providerName}`);
+        throw new Error(`Unknown TTS provider: ${providerName}. Available: sarvam, browser, aws-polly`);
     }
   }
 
   /**
    * Factory method for STT providers
-   * @param providerName - Name of the provider to instantiate
-   * @returns STTProvider implementation
-   * @throws Error if provider name is unknown
    */
   private static async createSTTProvider(providerName: string): Promise<STTProvider> {
     switch (providerName) {
+      case 'browser':
+        const { BrowserSTTAdapter } = await import('./browser/BrowserSTTAdapter.js');
+        return new BrowserSTTAdapter();
       case 'aws-transcribe':
         const { AWSTranscribeAdapter } = await import('./aws/AWSTranscribeAdapter.js');
         return new AWSTranscribeAdapter();
-      // Future providers:
-      // case 'whisper':
-      //   const { WhisperAdapter } = await import('./whisper/WhisperAdapter.js');
-      //   return new WhisperAdapter();
       default:
-        throw new Error(`Unknown STT provider: ${providerName}`);
+        throw new Error(`Unknown STT provider: ${providerName}. Available: browser, aws-transcribe`);
     }
   }
 
   /**
    * Factory method for Image providers
-   * @param providerName - Name of the provider to instantiate
-   * @returns ImageProvider implementation
-   * @throws Error if provider name is unknown
    */
   private static async createImageProvider(providerName: string): Promise<ImageProvider> {
     switch (providerName) {
+      case 'placeholder':
+        const { PlaceholderImageAdapter } = await import('./browser/PlaceholderImageAdapter.js');
+        return new PlaceholderImageAdapter();
       case 'aws-bedrock':
         const { AWSImageAdapter } = await import('./aws/AWSImageAdapter.js');
         return new AWSImageAdapter();
-      // Future providers:
-      // case 'stable-diffusion':
-      //   const { StableDiffusionAdapter } = await import('./stablediffusion/StableDiffusionAdapter.js');
-      //   return new StableDiffusionAdapter();
       default:
-        throw new Error(`Unknown Image provider: ${providerName}`);
+        throw new Error(`Unknown Image provider: ${providerName}. Available: placeholder, aws-bedrock`);
     }
   }
 

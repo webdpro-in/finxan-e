@@ -28,34 +28,34 @@ function AppContent() {
     // Initialize session
     sessionManager.initializeSession();
 
-    // Initialize with greeting
-    const initializeGreeting = async () => {
-      const greeting = aiService.getGreeting();
-      setLeftPanelContent(greeting.text);
-      setTeachingSegments(greeting.segments);
-      
-      // Wait for model to load before playing greeting gesture
-      // Check every 500ms for up to 5 seconds
-      let attempts = 0;
-      const maxAttempts = 10;
-      const checkInterval = setInterval(() => {
-        attempts++;
-        if (motionManager.getState() !== 'idle' || attempts >= maxAttempts) {
-          clearInterval(checkInterval);
-          if (attempts < maxAttempts) {
-            console.log('🎬 Playing greeting animation');
-            motionManager.requestGesture('greeting');
-          } else {
-            console.warn('⚠️ Model not ready after 5 seconds, skipping greeting animation');
-          }
-        }
-      }, 500);
-    };
+    // Set greeting text immediately
+    const greeting = aiService.getGreeting();
+    setLeftPanelContent(greeting.text);
+    setTeachingSegments(greeting.segments);
 
-    initializeGreeting();
+    // Wait for the Live2D model to initialize (motionManager.model becomes set)
+    // We poll until the state transitions from the very-first call after setModel()
+    let attempts = 0;
+    const maxAttempts = 20; // 10 seconds
+    const checkInterval = setInterval(() => {
+      attempts++;
+      // motionManager.getState() returns 'idle' after model is loaded and idle motion starts
+      // We check model is ready by seeing if requestGesture would succeed (model != null)
+      const state = motionManager.getState();
+      // After setModel() is called, state is 'idle'. We check attempts as anti-infinite-loop guard.
+      if (state === 'idle' && attempts >= 2) {
+        clearInterval(checkInterval);
+        console.log('🎬 Model ready — playing greeting animation');
+        motionManager.requestGesture('greeting');
+      } else if (attempts >= maxAttempts) {
+        clearInterval(checkInterval);
+        console.warn('⚠️ Model not ready after 10 seconds, skipping greeting animation');
+      }
+    }, 500);
 
     // Cleanup on unmount
     return () => {
+      clearInterval(checkInterval);
       motionManager.destroy();
     };
   }, []);

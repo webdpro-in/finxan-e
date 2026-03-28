@@ -221,6 +221,30 @@
   cursor: not-allowed;
 }
 
+.stop-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: none;
+  background: #ef4444;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.stop-button:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.stop-button:active {
+  transform: translateY(0);
+}
+
 /* Real-time transcription display */
 .live-transcript {
   display: flex;
